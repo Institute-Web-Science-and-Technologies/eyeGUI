@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -13,17 +13,25 @@ namespace eyegui
 		std::string id,
 		std::string styleName,
 		Element* pParent,
-		Layout* pLayout,
+		Layout const * pLayout,
+		Frame* pFrame,
 		AssetManager* pAssetManager,
+		NotificationQueue* pNotificationQueue,
 		float relativeScale,
-		float border) : Element(
+		float border,
+		bool dimmable,
+		bool adaptiveScaling) : Element(
 			id,
 			styleName,
 			pParent,
 			pLayout,
+			pFrame,
 			pAssetManager,
+			pNotificationQueue,
 			relativeScale,
-			border)
+			border,
+			dimmable,
+			adaptiveScaling)
 	{
 		mType = Type::BLANK;
 	}
@@ -33,9 +41,9 @@ namespace eyegui
 		// Nothing to do
 	}
 
-	void Blank::specialUpdate(float tpf, Input* pInput)
+	float Blank::specialUpdate(float tpf, Input* pInput)
 	{
-		// Nothing to do
+		return 0;
 	}
 
 	void Blank::specialDraw() const

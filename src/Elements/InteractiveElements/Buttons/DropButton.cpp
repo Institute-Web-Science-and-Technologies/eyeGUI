@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -16,19 +16,27 @@ namespace eyegui
 		std::string id,
 		std::string styleName,
 		Element* pParent,
-		Layout* pLayout,
+		Layout const * pLayout,
+		Frame* pFrame,
 		AssetManager* pAssetManager,
+		NotificationQueue* pNotificationQueue,
 		float relativeScale,
 		float border,
+		bool dimmable,
+		bool adaptiveScaling,
 		std::string iconFilepath,
 		float space) : BoxButton(
 			id,
 			styleName,
 			pParent,
 			pLayout,
+			pFrame,
 			pAssetManager,
+			pNotificationQueue,
 			relativeScale,
 			border,
+			dimmable,
+			adaptiveScaling,
 			iconFilepath,
 			true)
 	{
@@ -38,7 +46,7 @@ namespace eyegui
 		mSpace = space;
 
 		// Initial values
-		mInnerAlpha = 0;
+		mInnerAlpha.setValue(0);
 		mInnerElementVisible = false;
 	}
 
@@ -53,11 +61,12 @@ namespace eyegui
 		BoxButton::down(immediately);
 
 		mInnerElementVisible = true;
+		mForceUndim = true;
 
 		// Immediately
 		if (immediately)
 		{
-			mInnerAlpha = 1;
+			mInnerAlpha.setValue(1);
 		}
 	}
 
@@ -67,11 +76,12 @@ namespace eyegui
 		BoxButton::up(immediately);
 
 		mInnerElementVisible = false;
+		mForceUndim = false;
 
 		// Immediately
 		if (immediately)
 		{
-			mInnerAlpha = 0;
+			mInnerAlpha.setValue(0);
 		}
 	}
 
@@ -83,8 +93,8 @@ namespace eyegui
 			// Should be the only one
 			mChildren.push_back(std::move(upElement));
 
-			// Register in layout for updating before everything else and drawing after everything else
-			mpLayout->registerFrontElementForUpdateAndDraw(getInnerElement(), isDown());
+			// Register in frame for updating before everything else and drawing after everything else
+			mpFrame->registerFrontElementForUpdateAndDraw(getInnerElement(), isDown());
 		}
 	}
 
@@ -105,7 +115,7 @@ namespace eyegui
 			// element and all children was done in layout during replacement
 
 			// Register new element
-			mpLayout->registerFrontElementForUpdateAndDraw(getInnerElement(), isDown());
+			mpFrame->registerFrontElementForUpdateAndDraw(getInnerElement(), isDown());
 		}
 
 		return std::move(upElement);
@@ -123,35 +133,29 @@ namespace eyegui
 		return BoxButton::nextInteractiveElement();
 	}
 
-	void DropButton::setActivity(bool active, bool setImmediately)
+	void DropButton::setActivity(bool active, bool fade)
 	{
-		// Member set, so use it
+		// Member not yet set, so use parameter
 		if (!active)
 		{
-			up(setImmediately);
+			up(!fade);
 		}
 
 		// Super call after up(), because up() tests for active
-		BoxButton::setActivity(active, setImmediately);
+		BoxButton::setActivity(active, fade);
 	}
 
-	void DropButton::specialUpdate(float tpf, Input * pInput)
+	float DropButton::specialUpdate(float tpf, Input * pInput)
 	{
 		// Super call
-		BoxButton::specialUpdate(tpf, pInput);
+		float adaptiveScale = BoxButton::specialUpdate(tpf, pInput);
 
 		// Update alpha of inner element
-		if (mInnerElementVisible)
-		{
-			mInnerAlpha += tpf / mpLayout->getConfig()->animationDuration;
-		}
-		else
-		{
-			mInnerAlpha -= tpf / mpLayout->getConfig()->animationDuration;
-		}
-		mInnerAlpha = clamp(mInnerAlpha, 0, 1);
+		mInnerAlpha.update(tpf / mpLayout->getConfig()->animationDuration, !mInnerElementVisible);
 
-		mpLayout->setFrontElementAlpha(getInnerElement(), mInnerAlpha * mAlpha);
+		mpFrame->setFrontElementAlpha(getInnerElement(), mInnerAlpha.getValue() * mAlpha);
+
+		return adaptiveScale;
 	}
 
 	void DropButton::specialTransformAndSize()
@@ -224,7 +228,7 @@ namespace eyegui
 		// Super call
 		BoxButton::specialReset();
 
-		mInnerAlpha = 0;
+		mInnerAlpha.setValue(0);
 		mInnerElementVisible = false;
 	}
 

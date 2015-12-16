@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -24,10 +24,14 @@ namespace eyegui
 			std::string id,
 			std::string styleName,
 			Element* pParent,
-			Layout* pLayout,
+			Layout const * pLayout,
+			Frame* pFrame,
 			AssetManager* pAssetManager,
+			NotificationQueue* pNotificationQueue,
 			float relativeScale,
 			float border,
+			bool dimmable,
+			bool adaptiveScaling,
 			std::string iconFilepath,
 			float space);
 
@@ -50,12 +54,12 @@ namespace eyegui
 		virtual InteractiveElement* nextInteractiveElement();
 
 		// Activate or deactivate
-		virtual void setActivity(bool active, bool setImmediately);
+		virtual void setActivity(bool active, bool fade);
 
 	protected:
 
-		// Updating filled by subclasses
-		virtual void specialUpdate(float tpf, Input* pInput);
+		// Updating filled by subclasses, returns adaptive scale
+		virtual float specialUpdate(float tpf, Input* pInput);
 
 		// Transformation
 		virtual void specialTransformAndSize();
@@ -70,7 +74,7 @@ namespace eyegui
 
 		// Member
 		float mSpace;
-		float mInnerAlpha;
+		LerpValue mInnerAlpha;
 		bool mInnerElementVisible;
 	};
 }

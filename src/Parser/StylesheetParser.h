@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -17,24 +17,17 @@
 
 namespace eyegui
 {
-	class StylesheetParser
-	{
-	public:
+    namespace stylesheet_parser
+    {
+        // Parsing
+        std::unique_ptr<std::map<std::string, Style> > parse(std::string filepath);
 
-		// Constructor
-		StylesheetParser();
+        // Parses whole line and fills value in style struct
+        void parseLine(std::string line, Style& rStyle);
 
-		// Parsing
-		std::unique_ptr<std::map<std::string, Style> > parse(std::string filepath);
-
-	private:
-
-		// Parses whole line and fills value in style struct
-		void parseValue(std::string value, Style& rStyle, std::string filepath) const;
-
-		// Parse color
-		glm::vec4 parseColor(std::string value) const;
-	};
+        // Fill value (also used by interface etc)
+        void fillValue(Style& rStyle, std::string attribute, glm::vec4 value);
+    }
 }
 
 #endif // STYLESHEET_PARSER_H_

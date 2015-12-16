@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -22,10 +22,14 @@ namespace eyegui
 			std::string id,
 			std::string styleName,
 			Element* pParent,
-			Layout* pLayout,
+			Layout const * pLayout,
+			Frame* pFrame,
 			AssetManager* pAssetManager,
+			NotificationQueue* pNotificationQueue,
 			float relativeScale,
 			float border,
+			bool dimmable,
+			bool adaptiveScaling,
 			std::string filepath,
 			PictureAlignment alignment);
 
@@ -41,8 +45,8 @@ namespace eyegui
 
 	protected:
 
-		// Updating filled by subclasses
-		virtual void specialUpdate(float tpf, Input* pInput);
+		// Updating filled by subclasses, returns adaptive scale
+		virtual float specialUpdate(float tpf, Input* pInput);
 
 		// Drawing filled by subclasses
 		virtual void specialDraw() const;
@@ -56,8 +60,8 @@ namespace eyegui
 	private:
 
 		// Members
-		RenderItem* mpQuad;
-		Texture* mpImage;
+		RenderItem const * mpQuad;
+		Texture const * mpImage;
 		PictureAlignment mAlignment;
 	};
 }

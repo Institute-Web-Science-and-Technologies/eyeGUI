@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -26,10 +26,14 @@ namespace eyegui
 			std::string id,
 			std::string styleName,
 			Element* pParent,
-			Layout* pLayout,
+			Layout const * pLayout,
+			Frame* pFrame,
 			AssetManager* pAssetManager,
+			NotificationQueue* pNotificationQueue,
 			float relativeScale,
 			float border,
+			bool dimmable,
+			bool adaptiveScaling,
 			std::string iconFilepath);
 
 		// Destructor
@@ -51,15 +55,15 @@ namespace eyegui
 		void setIcon(std::string filepath);
 
 		// Called by layout after updating
-		void pipeNotification(Notification notification);
+		void pipeNotification(Notification notification, Layout* pLayout);
 
 		// Tries to fetch next interactive element for selecting, returns NULL if fails
 		virtual InteractiveElement* internalNextInteractiveElement(Element const * pChildCaller);
 
 	protected:
 
-		// Updating filled by subclasses
-		virtual void specialUpdate(float tpf, Input* pInput);
+		// Updating filled by subclasses, returns adaptive scale
+		virtual float specialUpdate(float tpf, Input* pInput);
 
 		// Drawing filled by subclasses
 		virtual void specialDraw() const;
@@ -71,25 +75,22 @@ namespace eyegui
 		virtual void specialInteract() = 0;
 
 		// Filled by subclass and called by layout after updating
-		virtual void specialPipeNotification(Notification notification) = 0;
+		virtual void specialPipeNotification(Notification notification, Layout* pLayout) = 0;
 
 		// Calculate aspect ratio correction for icon on gizmo
 		glm::vec2 iconAspectRatioCorrection() const;
 
-		// Checks, whether element is penetrated by input
-		virtual bool penetratedByInput(Input const * pInput) const;
-
 		// Members
-		RenderItem* mpRenderItem; // has to be initialized by subclasses
+		RenderItem const * mpRenderItem; // has to be initialized by subclasses
 
 	private:
 
 		// Members
-		float mHighlight;
+		LerpValue mHighlight;
 		bool mIsHighlighted;
-		float mSelection;
+		LerpValue mSelection;
 		bool mIsSelected;
-		Texture* mpIcon;
+		Texture const * mpIcon;
 	};
 }
 

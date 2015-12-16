@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -19,10 +19,11 @@
 #define ELEMENT_H_
 
 #include "eyeGUI.h"
+#include "Object.h"
 #include "Rendering/AssetManager.h"
-#include "Input.h"
 #include "Style.h"
-#include "External/GLM/glm/glm.hpp"
+#include "LerpValue.h"
+#include "externals/GLM/glm/glm.hpp"
 
 #include <memory>
 #include <vector>
@@ -30,188 +31,225 @@
 
 namespace eyegui
 {
-	// Forward declaration
-	class Layout;
-	class InteractiveElement;
+    // Forward declaration
+    class Layout;
+    class NotificationQueue;
+    class Frame;
+    class InteractiveElement;
 
-	class Element
-	{
-	public:
+    class Element : public Object
+    {
+    public:
 
-		// Enumeration of elements
-		enum class Type {
-			ELEMENT,
-			PICTURE,
-			BLANK,
-			INTERACTIVE_ELEMENT,
-			SENSOR,
-			BUTTON,
-			CIRCLE_BUTTON,
-			BOX_BUTTON,
-			DROP_BUTTON,
-			BLOCK,
-			STACK,
-			GRID
-		};
+        // Enumeration of elements
+        enum class Type {
+            ELEMENT,
+            PICTURE,
+            BLANK,
+            INTERACTIVE_ELEMENT,
+            SENSOR,
+            BUTTON,
+            CIRCLE_BUTTON,
+            BOX_BUTTON,
+            DROP_BUTTON,
+            BLOCK,
+            STACK,
+            GRID,
+            TEXT_BLOCK
+        };
 
-		// Orientation of element
-		enum class Orientation { HORIZONTAL, VERTICAL };
+        // Orientation of element
+        enum class Orientation { HORIZONTAL, VERTICAL };
 
-		// Constructor
-		Element(
-			std::string id,
-			std::string styleName,
-			Element* pParent,
-			Layout* pLayout,
-			AssetManager* pAssetManager,
-			float relativeScale,
-			float border);
+        // Constructor
+        Element(
+            std::string id,
+            std::string styleName,
+            Element* pParent,
+            Layout const * pLayout,
+            Frame* pFrame,
+            AssetManager* pAssetManager,
+            NotificationQueue* pNotificationQueue,
+            float relativeScale,
+            float border,
+            bool dimmable,
+            bool adaptiveScaling);
 
-		// Destructor
-		virtual ~Element() = 0;
+        // Destructor
+        virtual ~Element() = 0;
 
-		// Type getter
-		Type getType() const;
+        // Transformation and size in pixels
+        virtual int getX() const;
+        virtual int getY() const;
+        virtual int getWidth() const;
+        virtual int getHeight() const;
 
-		// Id getter
-		std::string getId() const;
+        // Get relative screen position and size
+        virtual float getRelativePositionOnLayoutX() const;
+        virtual float getRelativePositionOnLayoutY() const;
+        virtual float getRelativeSizeOnLayoutX() const;
+        virtual float getRelativeSizeOnLayoutY() const;
 
-		// Parent
-		Element* getParent() const;
+        // Type getter
+        Type getType() const;
 
-		// Activity
-		bool isActive() const;
+        // Id getter
+        std::string getId() const;
 
-		// Orientation
-		Orientation getOrientation() const;
+        // Parent
+        Element* getParent() const;
 
-		// Style
-		Style const * getStyle() const;
+        // Activity
+        bool isActive() const;
 
-		// Name of style
-		std::string getStyleName() const;
+        // Orientation
+        Orientation getOrientation() const;
 
-		// Setter for alpha
-		void setAlpha(float alpha);
+        // Getter for style
+        Style const * getStyle() const;
 
-		// Getter for alpha
-		float getAlpha() const;
+        // Setter for style
+        void setStyle(std::string styleName);
 
-		// Activate or deactivate
-		virtual void setActivity(bool active, bool setImmediately);
+        // Getter for name of style
+        std::string getStyleName() const;
 
-		// Get layout
-		Layout* getLayout() const;
+        // Setter for alpha
+        void setAlpha(float alpha);
 
-		// Get asset manager
-		AssetManager* getAssetManager() const;
+        // Getter for alpha
+        float getAlpha() const;
 
-		// Get border
-		float getBorder() const;
+        // Activate or deactivate
+        virtual void setActivity(bool active, bool fade);
 
-		// Get pointer to all children, recursively
-		std::set<Element *> getAllChildren();
+        // Setter for dimmable
+        void setDimmable(bool dimmable);
 
-		// Get ids of all children, recursively
-		std::set<std::string> getAllChildrensIds() const;
+        // Getter for dimmable
+        bool isDimmable() const;
 
-		// Change transformation and size (pixel values)
-		void transformAndSize(int x, int y, int width, int height);
+        // Get layout
+        Layout const * getLayout() const;
 
-		/*
-		__________> x
-		|
-		|
-		|
-		|
-		v
-		y
+        // Get frame
+        Frame* getFrame() const;
 
-		x coordinate = minimal left value in pixels
-		y coordinate = minimal top value in pixels
+        // Get asset manager
+        AssetManager* getAssetManager() const;
 
-		*/
+        // Get notification queue
+        NotificationQueue* getNotificationQueue() const;
 
-		// Transformation and size
-		int getX() const;
-		int getY() const;
-		int getWidth() const;
-		int getHeight() const;
-		float getRelativeScale() const;
+        // Get border
+        float getBorder() const;
 
-		// Updating
-		void update(float tpf, float alpha, Input* pInput);
+        // Get pointer to all children, recursively
+        std::set<Element*> getAllChildren() const;
 
-		// Drawing
-		void draw() const;
+        // Get ids of all children, recursively
+        std::set<std::string> getAllChildrensIds() const;
 
-		// Resetting
-		void reset();
+        // Change transformation and size (pixel values)
+        void transformAndSize(int x, int y, int width, int height);
 
-		// Check before transformation, how much space is needed
-		virtual void evaluateSize(
-			int availableWidth,
-			int availableHeight,
-			int& rWidth,
-			int& rHeight) const;
+        // Get relative and adaptive scale combined to dynamic scale
+        float getDynamicScale() const;
 
-		// Starts the getting of the next interactive element, returns NULL if no available
-		virtual InteractiveElement* nextInteractiveElement();
+        // Get relative scale
+        float getRelativeScale() const;
 
-		// Tries to fetch next interactive element for selecting, returns NULL if fails
-		virtual InteractiveElement* internalNextInteractiveElement(Element const * pChildCaller);
+        // Get adaptive scaling
+        bool getAdaptiveScaling() const;
 
-		// Replace an attached element, returns NULL if not found
-		virtual std::unique_ptr<Element> replaceAttachedElement(
-			Element* pTarget,
-			std::unique_ptr<Element> upReplacement);
+        // Set hiding
+        void setHiding(bool hidden);
 
-		// Commit replaced element to this element
-		void commitReplacedElement(std::unique_ptr<Element> upElement, bool doFading);
+        // Updating, returns adaptive scale
+        float update(float tpf, float alpha, Input* pInput, float dimming);
 
-	protected:
+        // Drawing
+        void draw() const;
 
-		// Updating filled by subclasses
-		virtual void specialUpdate(float tpf, Input* pInput) = 0;
+        // Resetting
+        void reset();
 
-		// Drawing filled by subclasses
-		virtual void specialDraw() const = 0;
+        // Check before transformation, how much space is needed
+        virtual void evaluateSize(
+            int availableWidth,
+            int availableHeight,
+            int& rWidth,
+            int& rHeight) const;
 
-		// Transformation filled by subclasses
-		virtual void specialTransformAndSize() = 0;
+        // Starts the getting of the next interactive element, returns NULL if no available
+        virtual InteractiveElement* nextInteractiveElement();
 
-		// Reset filld by subclasses
-		virtual void specialReset() = 0;
+        // Tries to fetch next interactive element for selecting, returns NULL if fails
+        virtual InteractiveElement* internalNextInteractiveElement(Element const * pChildCaller);
 
-		// Convert pixel space to drawing space
-		glm::mat4 calculateDrawMatrix(int x, int y, int width, int height) const;
+        // Replace an attached element, returns NULL if not found
+        virtual std::unique_ptr<Element> replaceAttachedElement(
+            Element* pTarget,
+            std::unique_ptr<Element> upReplacement);
 
-		// Members
-		Type mType;
-		Layout* mpLayout;
-		AssetManager* mpAssetManager;
-		int mX, mY, mWidth, mHeight; // ONLY PIXEL BASED VALUES HERE
-		float mRelativeScale; // [0..]
-		float mAlpha; // [0..1]
-		float mBorderAspectRatio;
-		glm::mat4 mDrawMatrix;
-		float mActivity; // [0..1]
-		bool mActive;
+        // Commit replaced element to this element
+        void commitReplacedElement(std::unique_ptr<Element> upElement, bool fade);
 
-		// This vector is the owner of all possible children. May be empty!
-		std::vector<std::unique_ptr<Element> > mChildren;
+    protected:
 
-	private:
+        // Updating filled by subclasses, returns adaptive scale
+        virtual float specialUpdate(float tpf, Input* pInput) = 0;
 
-		// Members
-		std::string mId;
-		Element* mpParent;
-		float mBorder; // [0..1]
-		Orientation mOrientation;
-		std::string mStyleName;
-		Style const * mpStyle;
-		std::unique_ptr<Element> mupReplacedElement;
-	};
+        // Drawing filled by subclasses
+        virtual void specialDraw() const = 0;
+
+        // Transformation filled by subclasses
+        virtual void specialTransformAndSize() = 0;
+
+        // Reset filld by subclasses
+        virtual void specialReset() = 0;
+
+        // Convert pixel space to drawing space
+        glm::mat4 calculateDrawMatrix(int x, int y, int width, int height) const;
+
+        // Checks, whether element is penetrated by input
+        virtual bool penetratedByInput(Input const * pInput) const;
+
+        // Members
+        int mX, mY, mWidth, mHeight; // ONLY PIXEL BASED VALUES HERE
+        Type mType;
+        Layout const * mpLayout;
+        Frame* mpFrame;
+        AssetManager* mpAssetManager;
+        NotificationQueue* mpNotificationQueue;
+        float mRelativeScale; // [0..]
+        float mAlpha; // [0..1]
+        float mBorderAspectRatio;
+        glm::mat4 mDrawMatrix;
+        LerpValue mActivity; // [0..1]
+        bool mDimmable;
+        LerpValue mDimming; // [0..1] One means full dimming
+        bool mForceUndim; // At the moment only used by drop button
+                          // to be undimmed while showing inner elements
+        bool mActive;
+        bool mAdaptiveScaling;
+        LerpValue mAdaptiveScale; // [0..1]
+
+        // This vector is the owner of all children. May be empty!
+        std::vector<std::unique_ptr<Element> > mChildren;
+
+    private:
+
+        // Members
+        std::string mId;
+        Element* mpParent;
+        float mBorder; // [0..1]
+        Orientation mOrientation;
+        std::string mStyleName;
+        Style const * mpStyle;
+        std::unique_ptr<Element> mupReplacedElement;
+        bool mHidden;
+    };
 }
 
 #endif // ELEMENT_H_

@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -17,24 +17,11 @@ namespace eyegui
 	class GUI;
 	class Layout;
 
-	class LayoutParser
+	namespace layout_parser
 	{
-	public:
-
-		// Constructor
-		LayoutParser();
-
-		// Destructor
-		virtual ~LayoutParser();
-
 		// Parsing
 		std::unique_ptr<Layout> parse(GUI* pGUI, AssetManager* pAssetManager, std::string filepath);
-
-	private:
-
-		// Member
-		ElementParser mElementParser;
-	};
+	}
 }
 
 #endif // LAYOUT_PARSER_H_

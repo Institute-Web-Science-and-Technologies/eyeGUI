@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -13,19 +13,27 @@ namespace eyegui
 		std::string id,
 		std::string styleName,
 		Element* pParent,
-		Layout* pLayout,
+		Layout const * pLayout,
+		Frame* pFrame,
 		AssetManager* pAssetManager,
+		NotificationQueue* pNotificationQueue,
 		float relativeScale,
 		float border,
+		bool dimmable,
+		bool adaptiveScaling,
 		std::string filepath,
 		PictureAlignment alignment) : Element(
 			id,
 			styleName,
 			pParent,
 			pLayout,
+			pFrame,
 			pAssetManager,
+			pNotificationQueue,
 			relativeScale,
-			border)
+			border,
+			dimmable,
+			adaptiveScaling)
 	{
 		mType = Type::PICTURE;
 
@@ -82,19 +90,15 @@ namespace eyegui
 		}
 	}
 
-	void Picture::specialUpdate(float tpf, Input* pInput)
+	float Picture::specialUpdate(float tpf, Input* pInput)
 	{
-		// If mouse over picture, consume input (copied from INTERACTIVE element)
-		if (pInput != NULL && !pInput->mouseUsed)
+		// If mouse over picture, consume input
+		if (penetratedByInput(pInput))
 		{
-			if (pInput->mouseCursorX >= mX
-				&& pInput->mouseCursorX <= mX + mWidth
-				&& pInput->mouseCursorY >= mY
-				&& pInput->mouseCursorY <= mY + mHeight)
-			{
-				pInput->mouseUsed = true;
-			}
+			pInput->gazeUsed = true;
 		}
+
+		return 0;
 	}
 
 	void Picture::specialDraw() const
@@ -109,7 +113,11 @@ namespace eyegui
 		mpQuad->getShader()->fillValue("alpha", mAlpha);
 
 		// Fill activity
-		mpQuad->getShader()->fillValue("activity", mActivity);
+		mpQuad->getShader()->fillValue("activity", mActivity.getValue());
+
+		// Fill dimming
+		mpQuad->getShader()->fillValue("dimColor", getStyle()->dimColor);
+		mpQuad->getShader()->fillValue("dimming", mDimming.getValue());
 
 		// Bind image
 		mpImage->bind(0);

@@ -1,5 +1,5 @@
 //============================================================================
-// Distributed under the MIT License. (See accompanying file LICENSE 
+// Distributed under the MIT License. (See accompanying file LICENSE
 // or copy at https://github.com/raphaelmenges/eyeGUI/blob/master/src/LICENSE)
 //============================================================================
 
@@ -9,87 +9,111 @@
 
 namespace eyegui
 {
-	Block::Block(
-		std::string id,
-		std::string styleName,
-		Element* pParent,
-		Layout* pLayout,
-		AssetManager* pAssetManager,
-		float relativeScale,
-		float border) : Element(
-			id,
-			styleName,
-			pParent,
-			pLayout,
-			pAssetManager,
-			relativeScale,
-			border)
-	{
-		mType = Type::BLOCK;
+    Block::Block(
+        std::string id,
+        std::string styleName,
+        Element* pParent,
+        Layout const * pLayout,
+        Frame* pFrame,
+        AssetManager* pAssetManager,
+        NotificationQueue* pNotificationQueue,
+        float relativeScale,
+        float border,
+        bool dimmable,
+        bool adaptiveScaling,
+        bool consumeInput,
+        float innerBorder) : Element(
+            id,
+            styleName,
+            pParent,
+            pLayout,
+            pFrame,
+            pAssetManager,
+            pNotificationQueue,
+            relativeScale,
+            border,
+            dimmable,
+            adaptiveScaling)
+    {
+        mType = Type::BLOCK;
 
-		// Fetch render item
-		mpBackground = pAssetManager->fetchRenderItem(
-			shaders::Type::BLOCK,
-			meshes::Type::QUAD);
-	}
+        // Fill members
+        mConsumeInput = consumeInput;
+        mInnerBorder = innerBorder;
 
-	Block::~Block()
-	{
-		// Nothing to do so far
-	}
+        // Fetch render item
+        mpBackground = pAssetManager->fetchRenderItem(
+            shaders::Type::BLOCK,
+            meshes::Type::QUAD);
+    }
 
-	// Updating
-	void Block::specialUpdate(float tpf, Input* pInput)
-	{
-		// If mouse over block, consume input (copied from INTERACTIVE element)
-		// TODO: Using the alpha is somehow..strange
-		if (pInput != NULL
-			&& !pInput->mouseUsed
-			&& getStyle()->backgroundColor.a > 0)
-		{
-			if (pInput->mouseCursorX >= mX
-				&& pInput->mouseCursorX <= mX + mWidth
-				&& pInput->mouseCursorY >= mY
-				&& pInput->mouseCursorY <= mY + mHeight)
-			{
-				pInput->mouseUsed = true;
-			}
-		}
-	}
+    Block::~Block()
+    {
+        // Nothing to do so far
+    }
 
-	void Block::specialDraw() const
-	{
-		if (getStyle()->backgroundColor.a > 0)
-		{
-			// Bind render item before setting values and drawing
-			mpBackground->bind();
+    // Updating
+    float Block::specialUpdate(float tpf, Input* pInput)
+    {
+        // Check if block blocks also input
+        if (penetratedByInput(pInput) && mConsumeInput)
+        {
+            pInput->gazeUsed = true;
+        }
 
-			// Fill matrix in shader
-			mpBackground->getShader()->fillValue("matrix", mDrawMatrix);
+        return 0;
+    }
 
-			// Fill color to shader
-			mpBackground->getShader()->fillValue(
-				"backgroundColor",
-				getStyle()->backgroundColor);
+    void Block::specialDraw() const
+    {
+        if (getStyle()->backgroundColor.a > 0)
+        {
+            // Bind render item before setting values and drawing
+            mpBackground->bind();
 
-			// Fill alpha
-			mpBackground->getShader()->fillValue("alpha", mAlpha);
+            // Fill matrix in shader
+            mpBackground->getShader()->fillValue("matrix", mDrawMatrix);
 
-			// Fill activity
-			mpBackground->getShader()->fillValue("activity", mActivity);
+            // Fill color to shader
+            mpBackground->getShader()->fillValue(
+                "backgroundColor",
+                getStyle()->backgroundColor);
 
-			// Draw render item
-			mpBackground->draw();
-		}
-	}
+            // Fill alpha
+            mpBackground->getShader()->fillValue("alpha", mAlpha);
 
-	void Block::specialTransformAndSize()
-	{
-		// Nothing to do
-	}
+            // Fill activity
+            mpBackground->getShader()->fillValue("activity", mActivity.getValue());
 
-	void Block::specialReset()
-	{
-		// Nothing to do
-	}
+            // Fill dimming
+            mpBackground->getShader()->fillValue("dimColor", getStyle()->dimColor);
+            mpBackground->getShader()->fillValue("dimming", mDimming.getValue());
+
+            // Draw render item
+            mpBackground->draw();
+        }
+    }
+
+    void Block::specialTransformAndSize()
+    {
+        // Use inner border
+        int usedBorder;
+        if (getOrientation() == Element::Orientation::HORIZONTAL)
+        {
+            usedBorder = (int)((float)mHeight * mInnerBorder);
+        }
+        else
+        {
+            usedBorder = (int)((float)mWidth * mInnerBorder);
+        }
+        mInnerX = mX + usedBorder / 2;
+        mInnerY = mY + usedBorder / 2;
+        mInnerWidth = mWidth - usedBorder;
+        mInnerHeight = mHeight - usedBorder;
+    }
+
+    void Block::specialReset()
+    {
+        // Nothing to do
+    }
 }
